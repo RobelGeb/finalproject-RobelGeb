@@ -4,21 +4,8 @@ import cloudconvert
 import cloudconvert_key as cloudconvert_key
 import audd_key as audd_key
 
-### Utility functions you may want to use
 def pretty(obj):
     return json.dumps(obj, sort_keys=True, indent=2)
-
-
-def safe_get(url):
-    try:
-        return urllib.request.urlopen(url)
-    except urllib.error.HTTPError as e:
-        print("The server couldn't fulfill the request.")
-        print("Error code: ", e.code)
-    except urllib.error.URLError as e:
-        print("We failed to reach a server")
-        print("Reason: ", e.reason)
-    return None
 
 
 def audio_converter(video_file):
@@ -42,18 +29,12 @@ def audio_converter(video_file):
     })
 
     upload_task_id = job['tasks'][0]['id']
-
     upload_task = cloudconvert.Task.find(id=upload_task_id)
-    res = cloudconvert.Task.upload(file_name=video_file, task=upload_task)
 
+    res = cloudconvert.Task.upload(file_name=video_file, task=upload_task)
     res = cloudconvert.Task.find(id=upload_task_id)
 
-    #print(pretty(res))
-
     job = cloudconvert.Job.wait(id=job['id'])
-
-    #print(pretty(job))
-
     dl_link = job['tasks'][0]['result']['files'][0]['url']
     return dl_link
 
@@ -61,7 +42,7 @@ def audio_fingerprint(url):
     data = {
         'api_token': audd_key.key,
         'url': url,
-        'return': 'apple_music,spotify',
+        'return': 'apple_music,spotify'
     }
     result = requests.post('https://api.audd.io/', data)
     return json.loads(result.text)
@@ -76,6 +57,7 @@ def greeting():
 
 @app.route("/inputfile", methods=['POST'])
 def input_handler():
+    app.logger.info("In Post-Search")
     if request.method == 'POST':
         inputfile = request.files.get('inputfile')
         inputfile.save('uploads/input.mp4')
@@ -83,6 +65,7 @@ def input_handler():
         url = audio_converter('uploads/input.mp4')
 
         result = audio_fingerprint(url)
+        result['result']['album'] = result['result']['album'].encode('utf-8')
 
     return render_template('outputtemplate.html', result=result['result'])
 

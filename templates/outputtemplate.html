@@ -1,12 +1,29 @@
 <html>
 <head>
     <title>Results</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: large;
+        }
+        .results {
+            border-style: groove;
+            border-width: 3px;
+            border-color: #dbdbdb;
+            background-color: #e1e8eb;
+            width: 25%;
+            padding: 20px;
+        }
+    </style>
 </head>
 <body>
-{{result['album']}}<br>
-{{result['artist']}}<br>
-{{result['title']}}<br>
-{{result['release_date']}}<br>
-{{result['song_link']}}<br>
+    <h1>Here are your results!</h1>
+    <div class="results">
+        Artist: {{result['artist']}}<br>
+        Title: {{result['title']}}<br>
+        Released: {{result['release_date']}}<br>
+        Album: {{result['album']}}<br>
+        <a href={{result['song_link']}}>Find your song on streaming platforms!</a><br>
+    </div>
 </body>
 </html>

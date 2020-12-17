@@ -1,12 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head><title>Song Finder</title></head>
-    <body>
-        <h1>Hello! Upload an .mp4 file to find the music playing in the video.</h1>
-        <form action="inputfile" method="post" enctype="multipart/form-data">
-            <label for="inputfile">Upload here (keep .mp4 files <6 minutes):</label>
-            <input type="file" name="inputfile" id="inputfile"><br><br>
-            <input type="submit" value="Upload" name="submitbtn">
-        </form>
-    </body>
+    <head>
+        <title>Song Finder</title>
+        <style>
+        p1 {
+            font-size: large;
+        }
+        .content {
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+        .lowerlevel {
+            border-style: groove;
+            border-width: 3px;
+            border-color: #dbdbdb;
+            background-color: #e1e8eb;
+            width: 25%;
+            padding: 20px;
+        }
+    </style>
+    </head>
+    <div class="content">
+        <body>
+            <h1>Hello! Upload an .mp4 file to find the music playing in the video.</h1><br><br>
+            <div class="lowerlevel">
+                <form action="inputfile" method="post" enctype="multipart/form-data">
+                    <label for="inputfile">Upload here (keep .mp4 files <6 minutes to avoid long wait times):</label>
+                    <input type="file" name="inputfile" id="inputfile"><br><br>
+                    <input type="submit" value="Upload" name="submitbtn">
+                </form>
+            </div>
+        </body>
+    </div>
+
 </html>
