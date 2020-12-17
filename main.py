@@ -1,6 +1,8 @@
-import urllib.request, urllib.error, urllib.parse, json, webbrowser, jinja2, logging
+import urllib.request, urllib.error, urllib.parse, json, webbrowser, jinja2, logging, requests
 from flask import Flask, render_template, request
-
+import cloudconvert
+import cloudconvert_key as cloudconvert_key
+import audd_key as audd_key
 
 ### Utility functions you may want to use
 def pretty(obj):
@@ -19,69 +21,129 @@ def safe_get(url):
     return None
 
 
-#### Main Assignment ##############
+def audio_converter(video_file):
+    cloudconvert.configure(api_key=cloudconvert_key.key, sandbox=False)
 
-# You need to get your own api_key from Flickr,
-# from here https://www.flickr.com/services/api/misc.api_keys.html
-# (You will need to create an account).
-#
-# Put it in the file flickr_key.py
-#
-# Then, UNCOMMENT the api_key line AND the params['api_key'] line in
-# the function below.
-#
+    job = cloudconvert.Job.create(payload={
+        'tasks': {
+            'upload-my-file': {
+                'operation': 'import/upload'
+            },
+            'convert-my-file': {
+                'operation': 'convert',
+                'input': "upload-my-file",
+                'output_format': "mp3",
+            },
+            'export-my-file': {
+                'operation': 'export/url',
+                'input': 'convert-my-file'
+            }
+        }
+    })
 
-import flickr_key as flickr_key
+    upload_task_id = job['tasks'][0]['id']
 
+    upload_task = cloudconvert.Task.find(id=upload_task_id)
+    res = cloudconvert.Task.upload(file_name=video_file, task=upload_task)
 
-def flickrREST(baseurl='https://api.flickr.com/services/rest/',
-               method='flickr.photos.search',
-               api_key=flickr_key.key,
-               format='json',
-               params={},
-               printurl=False
-               ):
-    params['method'] = method
-    params['api_key'] = api_key
-    params['format'] = format
-    if format == "json": params["nojsoncallback"] = True
-    url = baseurl + "?" + urllib.parse.urlencode(params)
-    if printurl:
-        print(url)
-    return safe_get(url)
+    res = cloudconvert.Task.find(id=upload_task_id)
 
+    #print(pretty(res))
 
-#######################
-## Building block 1 ###
-# Define a function called get_photo_ids() which uses the Flickr API
-# to search for photos with a given tag, and return a list of photo
-# IDs for the corresponding photos.
-#
-# * Use a list comprehension to generate the list. *
+    job = cloudconvert.Job.wait(id=job['id'])
 
+    #print(pretty(job))
 
-def get_photo_ids(tag, n=100):
-    params = {'tags': tag, 'per_page': n}
-    flickr_url = flickrREST(params=params)
-    flickr_str = flickr_url.read()
-    flickr_data = json.loads(flickr_str)
-    return [photo['id'] for photo in flickr_data['photos']['photo']]
+    dl_link = job['tasks'][0]['result']['files'][0]['url']
+    return dl_link
+
+def audio_fingerprint(url):
+    data = {
+        'api_token': audd_key.key,
+        'url': url,
+        'return': 'apple_music,spotify',
+    }
+    result = requests.post('https://api.audd.io/', data)
+    return json.loads(result.text)
 
 
-######################
-## Building block 2 ##
-#
-# Define a function called get_photo_info() which uses the Flickr API
-# to get information about a particular photo id. The information
-# should be returned as a dictionary Hint: use flickrREST and the
-# Flickr API method flickr.photos.getInfo, documented at
-# http://www.flickr.com/services/api/flickr.photos.getInfo.html
+app = Flask(__name__)
+@app.route("/")
+def greeting():
+    app.logger.info("In Greeting")
+    return render_template('greetingtemplate.html')
 
 
-def get_photo_info(photoid):
-    params = {'photo_id': photoid}
-    flickr_info_url = flickrREST(method="flickr.photos.getInfo", params=params)
-    flickr_info_str = flickr_info_url.read()
-    flickr_data = json.loads(flickr_info_str)
-    return flickr_data['photo']
+@app.route("/inputfile", methods=['POST'])
+def input_handler():
+    if request.method == 'POST':
+        inputfile = request.files.get('inputfile')
+        inputfile.save('uploads/input.mp4')
 
+        url = audio_converter('uploads/input.mp4')
+
+        result = audio_fingerprint(url)
+
+    return render_template('outputtemplate.html', result=result['result'])
+
+
+if __name__ == '__main__':
+    app.run(host="localhost", port=8080, debug=True)
+
+
+#url = 'https://storage.cloudconvert.com/tasks/1ab8c579-ebd7-468f-88fe-e27db4ccb9a6/luther.mp3?AWSAccessKeyId=cloud' \
+#      'convert-production&Expires=1608240655&Signature=7XTWdxwszJXrJuqzzJtwSBZfUfI%3D&response-content-disposition' \
+#      '=attachment%3B%20filename%3D%22luther.mp3%22&response-content-type=audio%2Fmpeg'
+
+'''
+    "tasks": {
+        "import-1": {
+            "operation": "import/url"
+        },
+        "task-1": {
+            "operation": "convert",
+            "input_format": "mp4",
+            "output_format": "mp3",
+            "engine": "ffmpeg",
+            "input": [
+                "import-1"
+            ],
+            "audio_codec": "mp3",
+            "audio_qscale": 0
+        },
+        "export-1": {
+            "operation": "export/url",
+            "input": [
+                "task-1"
+            ],
+            "inline": False,
+            "archive_multiple_files": False
+        }
+    }
+    '''
+
+
+"""
+#getting the process URL
+api = cloudconvert.Api(cloudconvert_key.key)
+process = api.createProcess({
+    "mode": "info",
+    "inputformat": "mp4",
+    "outputformat": "mp3"
+})
+
+#starting the process
+process.start({
+    "input": "upload",
+    "file": open('luther.mp4', 'rb'),
+    "save": "true"
+})
+
+process.refresh()
+process.wait()
+print(process['message'])
+
+process.download('outputfile.ext')
+
+
+"""
