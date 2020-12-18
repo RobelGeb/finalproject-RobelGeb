@@ -42,7 +42,7 @@ def audio_fingerprint(url):
     data = {
         'api_token': audd_key.key,
         'url': url,
-        'return': 'apple_music,spotify'
+        'return': 'apple_music,lyrics'
     }
     result = requests.post('https://api.audd.io/', data)
     return json.loads(result.text)
@@ -65,9 +65,15 @@ def input_handler():
         url = audio_converter('uploads/input.mp4')
 
         result = audio_fingerprint(url)
-        result['result']['album'] = result['result']['album'].encode('utf-8')
+        print(pretty(result))
 
-    return render_template('outputtemplate.html', result=result['result'])
+    return render_template('outputtemplate.html',
+                           result=result['result']['apple_music'],
+                           lyrics=result['result']['lyrics']['lyrics'],
+                           status=result['status'],
+                           song_link=result['result']['song_link']
+                           )
+
 
 
 if __name__ == '__main__':

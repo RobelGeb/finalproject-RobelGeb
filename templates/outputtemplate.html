@@ -14,16 +14,29 @@
             width: 25%;
             padding: 20px;
         }
+        .lyrics{
+            font-size: medium;
+        }
     </style>
 </head>
 <body>
-    <h1>Here are your results!</h1>
-    <div class="results">
-        Artist: {{result['artist']}}<br>
-        Title: {{result['title']}}<br>
-        Released: {{result['release_date']}}<br>
-        Album: {{result['album']}}<br>
-        <a href={{result['song_link']}}>Find your song on streaming platforms!</a><br>
-    </div>
+    {% if status == 'success' %}
+        <h1>Here are your results!</h1>
+        <div class="results">
+            Artist: {{result['artistName']}}<br>
+            Title: {{result['name']}}<br>
+            Released: {{result['releaseDate']}}<br>
+            Album: {{result['albumName']}}<br>
+            <a href={{song_link}}>Click here</a> to find your song on streaming platforms!<br><br>
+            Lyrics:<br>
+            <div class="lyrics">
+                {{lyrics}}
+            </div>
+        </div>
+    {% else %}
+        <div class="results">
+            Sorry, but we could not find the song.
+        </div>
+    {% endif %}
 </body>
 </html>
